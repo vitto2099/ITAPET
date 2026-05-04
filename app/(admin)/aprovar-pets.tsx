@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const PETS_PENDENTES = [
   { id: '1', nome: 'Bidu', especie: 'Cão', bairro: 'Alto Paranaíba', dono: 'Carlos' },
@@ -7,6 +8,7 @@ const PETS_PENDENTES = [
 ];
 
 export default function AprovarPets() {
+  const router = useRouter();
   const [pets, setPets] = useState(PETS_PENDENTES);
 
   const handleDecisao = (id: string, aprovado: boolean) => {
@@ -18,7 +20,12 @@ export default function AprovarPets() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cadastros Pendentes 📋</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 30, marginBottom: 20 }}>
+        <Text style={styles.title}>Cadastros Pendentes 📋</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={{ color: '#2E7D32', fontWeight: 'bold' }}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
       
       <FlatList
         data={pets}
@@ -56,7 +63,7 @@ export default function AprovarPets() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F2F5', padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, marginTop: 30 },
+  title: { fontSize: 20, fontWeight: 'bold' },
   card: { 
     backgroundColor: '#FFF', 
     padding: 15, 

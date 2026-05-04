@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 
 export default function CadastrarPet() {
+  const router = useRouter();
   const [fotoCarteira, setFotoCarteira] = useState<string | null>(null);
 
   const tirarFotoCarteira = async () => {
@@ -17,7 +19,7 @@ export default function CadastrarPet() {
       quality: 0.8,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setFotoCarteira(result.assets[0].uri);
     }
   };
@@ -44,7 +46,13 @@ export default function CadastrarPet() {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.btnFinalizar} onPress={() => Alert.alert("Enviado", "O veterinário irá analisar o cadastro.")}>
+      <TouchableOpacity 
+        style={styles.btnFinalizar} 
+        onPress={() => {
+          Alert.alert("Enviado", "O veterinário irá analisar o cadastro.");
+          router.back();
+        }}
+      >
         <Text style={{color: '#fff', fontWeight: 'bold'}}>Finalizar Cadastro do Pet</Text>
       </TouchableOpacity>
     </ScrollView>

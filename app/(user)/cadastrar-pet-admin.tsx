@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 
 export default function CadastrarPetAdmin() {
+  const router = useRouter();
   const [fotoVacina, setFotoVacina] = useState<string | null>(null);
 
   const tirarFotoVacina = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Erro", "Precisamos de permissão para acessar a câmera.");
+      return;
+    }
+
     const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
-    if (!result.canceled) setFotoVacina(result.assets[0].uri);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setFotoVacina(result.assets[0].uri);
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Área Técnica - Veterinário 🩺</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20 }}>
+        <Text style={styles.title}>Área Técnica - Veterinário 🩺</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.label}>Registro de Microchip (Obrigatório)</Text>
@@ -32,7 +47,13 @@ export default function CadastrarPetAdmin() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.btnFinalizar}>
+      <TouchableOpacity 
+        style={styles.btnFinalizar}
+        onPress={() => {
+          Alert.alert("Sucesso", "Registro oficial confirmado!");
+          router.back();
+        }}
+      >
         <Text style={styles.btnFinalizarText}>Confirmar Registro Oficial</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -41,7 +62,7 @@ export default function CadastrarPetAdmin() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F4F9', padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold', marginTop: 40, marginBottom: 20, color: '#1976D2' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#1976D2' },
   section: { backgroundColor: '#FFF', padding: 15, borderRadius: 10, marginBottom: 20, elevation: 2 },
   label: { fontWeight: 'bold', marginBottom: 8, color: '#333' },
   inputAdmin: { borderWidth: 1, borderColor: '#CCC', padding: 12, borderRadius: 8, backgroundColor: '#FAFAFA' },

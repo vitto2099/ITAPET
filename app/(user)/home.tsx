@@ -14,11 +14,28 @@ export default function HomeUser() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Olá, Cidadão! 👋</Text>
-        <Text style={styles.sub}>Itaiópolis - SC</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={styles.greeting}>Olá, Cidadão! 👋</Text>
+            <Text style={styles.sub}>Itaiópolis - SC</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => router.push('/(user)/perfil')} style={{ marginRight: 15 }}>
+              <Text style={{ color: '#2E7D32', fontWeight: 'bold' }}>Perfil</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+              <Text style={{ color: '#d32f2f', fontWeight: 'bold' }}>Sair</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Meus Animais</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+        <Text style={styles.sectionTitle}>Meus Animais</Text>
+        <TouchableOpacity onPress={() => router.push('/(user)/ajuda')}>
+          <Text style={{ color: '#2E7D32', fontWeight: 'bold' }}>❓ Ajuda</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={MEUS_PETS}
@@ -33,7 +50,7 @@ export default function HomeUser() {
             </View>
             <TouchableOpacity 
               style={styles.editBtn}
-              onPress={() => alert('Em breve: Detalhes do Pet')}
+              onPress={() => router.push({ pathname: '/(user)/detalhes-pet', params: { id: item.id } })}
             >
               <Text style={{ color: '#2E7D32' }}>Ver</Text>
             </TouchableOpacity>

@@ -18,7 +18,24 @@ export default function AdminDashboard() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Painel do Veterinário 🩺</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 15 }}>
+        <Text style={styles.header}>Painel do Veterinário 🩺</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.push('/(user)/perfil')} style={{ marginRight: 15 }}>
+            <Text style={{ color: '#2E7D32', fontWeight: 'bold' }}>Perfil</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+            <Text style={{ color: '#d32f2f', fontWeight: 'bold' }}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.btnAprovar}
+        onPress={() => router.push('/(admin)/aprovar-pets')}
+      >
+        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>📋 Ver Cadastros Pendentes</Text>
+      </TouchableOpacity>
       
       <TextInput 
         style={styles.busca} 
@@ -51,7 +68,7 @@ export default function AdminDashboard() {
             <View style={styles.acoes}>
               <TouchableOpacity 
                 style={styles.btnEditar}
-                onPress={() => Alert.alert("Editar", "Abrindo edição...")}
+                onPress={() => router.push({ pathname: '/(admin)/editar-pet', params: { id: item.id } })}
               >
                 <Text style={{color: '#2E7D32'}}>✏️ Editar</Text>
               </TouchableOpacity>
@@ -72,7 +89,8 @@ export default function AdminDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#f5f5f5' },
-  header: { fontSize: 22, fontWeight: 'bold', marginTop: 40, marginBottom: 15 },
+  header: { fontSize: 22, fontWeight: 'bold' },
+  btnAprovar: { backgroundColor: '#FFA000', padding: 15, borderRadius: 10, marginBottom: 20, alignItems: 'center' },
   busca: { backgroundColor: '#fff', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
   chip: { padding: 10, backgroundColor: '#ddd', borderRadius: 20, marginRight: 10, height: 40 },
   chipAtivo: { backgroundColor: '#2E7D32' },
