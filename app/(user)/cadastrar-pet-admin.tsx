@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../src/services/firebaseConfig';
+import { uploadImage } from '../../src/services/uploadImage';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { styles } from '../../src/styles/cadastrar-pet-admin.styles';
 
 export default function CadastrarPetAdmin() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [microchip, setMicrochip] = useState('');
+  const [procedimento, setProcedimento] = useState('');
   const [fotoVacina, setFotoVacina] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const tirarFotoVacina = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -20,6 +29,39 @@ export default function CadastrarPetAdmin() {
     }
   };
 
+  const handleSalvar = async () => {
+    if (!microchip) {
+      Alert.alert("Aviso", "O código do Microchip é obrigatório.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let fotoUrl = null;
+      if (fotoVacina && user) {
+        const path = `vaccines/${user.uid}/${Date.now()}.jpg`;
+        fotoUrl = await uploadImage(fotoVacina, path);
+      }
+
+      await addDoc(collection(db, "registrations"), {
+        microchip: microchip,
+        procedimento: procedimento,
+        fotoVacinaUrl: fotoUrl,
+        status: 'Concluido',
+        tipoRegistro: 'Admin',
+        criadoEm: serverTimestamp(),
+      });
+
+      Alert.alert("Sucesso", "Registro oficial confirmado!");
+      router.back();
+    } catch (error) {
+      console.error("Erro ao salvar registro admin:", error);
+      Alert.alert("Erro", "Não foi possível salvar o registro.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20 }}>
@@ -31,12 +73,23 @@ export default function CadastrarPetAdmin() {
 
       <View style={styles.section}>
         <Text style={styles.label}>Registro de Microchip (Obrigatório)</Text>
-        <TextInput style={styles.inputAdmin} placeholder="Digite o código do Microchip" keyboardType="numeric" />
+        <TextInput 
+          style={styles.inputAdmin} 
+          placeholder="Digite o código do Microchip" 
+          keyboardType="numeric" 
+          value={microchip}
+          onChangeText={setMicrochip}
+        />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.label}>Lançar Vacina / Procedimento</Text>
-        <TextInput style={styles.inputAdmin} placeholder="Ex: Antirrábica - Lote 2024" />
+        <TextInput 
+          style={styles.inputAdmin} 
+          placeholder="Ex: Antirrábica - Lote 2024" 
+          value={procedimento}
+          onChangeText={setProcedimento}
+        />
         
         <TouchableOpacity style={styles.btnCamera} onPress={tirarFotoVacina}>
           {fotoVacina ? (
@@ -49,25 +102,16 @@ export default function CadastrarPetAdmin() {
 
       <TouchableOpacity 
         style={styles.btnFinalizar}
-        onPress={() => {
-          Alert.alert("Sucesso", "Registro oficial confirmado!");
-          router.back();
-        }}
+        onPress={handleSalvar}
+        disabled={loading}
       >
-        <Text style={styles.btnFinalizarText}>Confirmar Registro Oficial</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.btnFinalizarText}>Confirmar Registro Oficial</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F4F9', padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#1976D2' },
-  section: { backgroundColor: '#FFF', padding: 15, borderRadius: 10, marginBottom: 20, elevation: 2 },
-  label: { fontWeight: 'bold', marginBottom: 8, color: '#333' },
-  inputAdmin: { borderWidth: 1, borderColor: '#CCC', padding: 12, borderRadius: 8, backgroundColor: '#FAFAFA' },
-  btnCamera: { backgroundColor: '#444', padding: 15, borderRadius: 8, marginTop: 10, alignItems: 'center', height: 100, justifyContent: 'center' },
-  fotoMini: { width: '100%', height: '100%', borderRadius: 8 },
-  btnFinalizar: { backgroundColor: '#1976D2', padding: 20, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-  btnFinalizarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 }
-});
+

@@ -1,15 +1,76 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../src/services/firebaseConfig';
 
 export default function Perfil() {
   const router = useRouter();
+  const { user, logout } = useAuth();
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Estados para edição
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleSave = () => {
-    Alert.alert("Sucesso", "Alterações salvas com sucesso!");
-    router.back();
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserData(data);
+          setNome(data.nome || '');
+          setTelefone(data.telefone || '');
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados do usuário:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!nome) {
+      Alert.alert("Erro", "O nome não pode estar vazio.");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await updateDoc(doc(db, 'users', user?.uid || ''), {
+        nome: nome,
+        telefone: telefone
+      });
+      Alert.alert("Sucesso", "Alterações salvas com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+      Alert.alert("Erro", "Não foi possível salvar as alterações.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
+
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -23,36 +84,61 @@ export default function Perfil() {
 
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>JS</Text>
+          <Text style={styles.avatarText}>{getInitials(nome)}</Text>
         </View>
-        <Text style={styles.userName}>João Silva</Text>
-        <Text style={styles.userRole}>Cidadão de Itaiópolis</Text>
+        <Text style={styles.userName}>{nome || 'Usuário'}</Text>
+        <Text style={styles.userRole}>
+          {userData?.role === 'admin' ? 'Veterinário(a) Autorizado(a)' : 'Cidadão de Itaiópolis'}
+        </Text>
       </View>
 
       <View style={styles.form}>
         <Text style={styles.label}>Nome Completo</Text>
-        <TextInput value="João Silva" style={styles.input} />
+        <TextInput 
+          value={nome} 
+          onChangeText={setNome}
+          style={styles.input} 
+          placeholder="Seu nome completo"
+        />
 
         <Text style={styles.label}>CPF</Text>
-        <TextInput value="123.456.789-00" style={styles.input} editable={false} />
+        <TextInput 
+          value={userData?.cpf || 'Não informado'} 
+          style={[styles.input, { backgroundColor: '#F0F0F0', color: '#888' }]} 
+          editable={false} 
+        />
 
         <Text style={styles.label}>E-mail</Text>
-        <TextInput value="joao.silva@email.com" style={styles.input} keyboardType="email-address" />
+        <TextInput 
+          value={user?.email || ''} 
+          style={[styles.input, { backgroundColor: '#F0F0F0', color: '#888' }]} 
+          editable={false}
+        />
 
         <Text style={styles.label}>Telefone</Text>
-        <TextInput placeholder="(47) 99999-9999" style={styles.input} keyboardType="phone-pad" />
+        <TextInput 
+          placeholder="(47) 99999-9999" 
+          value={telefone}
+          onChangeText={setTelefone}
+          style={styles.input} 
+          keyboardType="phone-pad" 
+        />
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, isUpdating && { opacity: 0.7 }]} 
+          onPress={handleSave}
+          disabled={isUpdating}
+        >
+          {isUpdating ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.dangerZone}>
-          <TouchableOpacity style={styles.outlineButton}>
-            <Text style={styles.outlineButtonText}>Alterar Senha</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.deleteButton}>
-            <Text style={styles.deleteButtonText}>Excluir Minha Conta</Text>
+          <TouchableOpacity style={styles.outlineButton} onPress={() => logout()}>
+            <Text style={[styles.outlineButtonText, { color: '#D32F2F' }]}>Sair da Conta</Text>
           </TouchableOpacity>
         </View>
       </View>

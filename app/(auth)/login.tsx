@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -9,21 +9,39 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
-  const handleLogin = () => {
-    // Simulação de login
-    if (email.toLowerCase().includes("admin")) {
-      router.replace("/(admin)/dashboard");
-    } else {
-      router.replace("/(user)/home");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos.");
+      return;
+    }
+
+    setIsLoggingIn(true);
+    try {
+      await login(email, password);
+      // O useEffect cuidará do redirecionamento assim que o role for carregado
+    } catch (error: any) {
+      console.error(error);
+      let message = "Ocorreu um erro ao entrar.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        message = "E-mail ou senha incorretos.";
+      }
+      Alert.alert("Erro", message);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -69,8 +87,16 @@ export default function Login() {
             <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Entrar</Text>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={handleLogin}
+            disabled={isLoggingIn}
+          >
+            {isLoggingIn ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Entrar</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>

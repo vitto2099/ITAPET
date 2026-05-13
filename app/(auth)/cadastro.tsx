@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   TextInput, 
@@ -7,13 +7,53 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView 
+  ScrollView,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function Cadastro() {
   const router = useRouter();
+  const { register } = useAuth();
+  
+  const [nome, setNome] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCadastro = async () => {
+    if (!nome || !cpf || !email || !senha) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await register(email, senha, {
+        nome,
+        cpf,
+      });
+      Alert.alert("Sucesso", "Conta criada com sucesso!");
+      // O AuthContext atualizará o estado e o Root Layout ou telas redirecionarão
+      // Mas aqui podemos forçar um retorno se necessário, embora o AuthContext costume disparar o redirecionamento global.
+      router.replace("/(user)/home");
+    } catch (error: any) {
+      console.error(error);
+      let message = "Erro ao criar conta.";
+      if (error.code === 'auth/email-already-in-use') {
+        message = "Este e-mail já está em uso.";
+      } else if (error.code === 'auth/weak-password') {
+        message = "A senha deve ter pelo menos 6 caracteres.";
+      }
+      Alert.alert("Erro", message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -32,25 +72,51 @@ export default function Cadastro() {
 
         <View style={styles.form}>
           <Text style={styles.label}>Nome Completo</Text>
-          <TextInput placeholder="Ex: João Silva" style={styles.input} />
+          <TextInput 
+            placeholder="Ex: João Silva" 
+            style={styles.input} 
+            value={nome}
+            onChangeText={setNome}
+          />
 
           <Text style={styles.label}>CPF</Text>
-          <TextInput placeholder="000.000.000-00" style={styles.input} keyboardType="numeric" />
+          <TextInput 
+            placeholder="000.000.000-00" 
+            style={styles.input} 
+            keyboardType="numeric" 
+            value={cpf}
+            onChangeText={setCpf}
+          />
 
           <Text style={styles.label}>E-mail</Text>
-          <TextInput placeholder="seu@email.com" style={styles.input} keyboardType="email-address" />
+          <TextInput 
+            placeholder="seu@email.com" 
+            style={styles.input} 
+            keyboardType="email-address" 
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
 
           <Text style={styles.label}>Senha</Text>
-          <TextInput placeholder="••••••••" style={styles.input} secureTextEntry />
+          <TextInput 
+            placeholder="••••••••" 
+            style={styles.input} 
+            secureTextEntry 
+            value={senha}
+            onChangeText={setSenha}
+          />
           
           <TouchableOpacity 
             style={styles.button} 
-            onPress={() => {
-              alert('Cadastro realizado com sucesso!');
-              router.back();
-            }}
+            onPress={handleCadastro}
+            disabled={isLoading}
           >
-            <Text style={styles.buttonText}>Finalizar Cadastro</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Finalizar Cadastro</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -1,29 +1,83 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-
-// Dados mockados para o teste visual
-const MEUS_PETS = [
-  { id: '1', nome: 'Rex', status: 'Aprovado', especie: 'Cão' },
-  { id: '2', nome: 'Luna', status: 'Pendente', especie: 'Gato' },
-];
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
+import { db } from '../../src/services/firebaseConfig';
+import { Registration } from '../../src/types/pet';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { styles } from '../../src/styles/home.styles';
 
 export default function HomeUser() {
   const router = useRouter();
+  const { user, logout } = useAuth();
+  const [meusPets, setMeusPets] = useState<Registration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('Cidadão');
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setUserName(userDoc.data().nome || 'Cidadão');
+        }
+      }
+    };
+    fetchUserName();
+  }, [user]);
+
+  const fetchMeusPets = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, "registrations"),
+        where("userId", "==", user.uid),
+        orderBy("criadoEm", "desc")
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Registration[];
+      
+      setMeusPets(data);
+    } catch (error) {
+      console.error("Erro ao buscar meus pets:", error);
+      // Fallback visual para teste se não houver dados e for um erro de permissão/índice
+      if (meusPets.length === 0) {
+        setMeusPets([
+          { id: '1', nomeAnimal: 'Rex (Exemplo)', status: 'aprovado', raca: 'Cão' } as any,
+        ]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchMeusPets();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
-            <Text style={styles.greeting}>Olá, Cidadão! 👋</Text>
+            <Text style={styles.greeting}>Olá, {userName.split(' ')[0]}! 👋</Text>
             <Text style={styles.sub}>Itaiópolis - SC</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity onPress={() => router.push('/(user)/perfil')} style={{ marginRight: 15 }}>
               <Text style={{ color: '#2E7D32', fontWeight: 'bold' }}>Perfil</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+            <TouchableOpacity onPress={() => logout()}>
               <Text style={{ color: '#d32f2f', fontWeight: 'bold' }}>Sair</Text>
             </TouchableOpacity>
           </View>
@@ -37,26 +91,35 @@ export default function HomeUser() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={MEUS_PETS}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.petCard}>
-            <View>
-              <Text style={styles.petName}>{item.nome}</Text>
-              <Text style={item.status === 'Aprovado' ? styles.statusOk : styles.statusWait}>
-                {item.status}
-              </Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 50 }} />
+      ) : (
+        <FlatList
+          data={meusPets}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.petCard}>
+              <View>
+                <Text style={styles.petName}>{item.nomeAnimal}</Text>
+                <Text style={item.status === 'aprovado' ? styles.statusOk : styles.statusWait}>
+                  {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pendente'}
+                </Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.editBtn}
+                onPress={() => router.push({ pathname: '/(user)/detalhes-pet', params: { id: item.id } })}
+              >
+                <Text style={{ color: '#2E7D32' }}>Ver</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={styles.editBtn}
-              onPress={() => router.push({ pathname: '/(user)/detalhes-pet', params: { id: item.id } })}
-            >
-              <Text style={{ color: '#2E7D32' }}>Ver</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+          )}
+          ListEmptyComponent={
+            <Text style={{ textAlign: 'center', marginTop: 20, color: '#999' }}>Nenhum animal cadastrado.</Text>
+          }
+          onRefresh={fetchMeusPets}
+          refreshing={loading}
+        />
+      )}
 
       <TouchableOpacity 
         style={styles.fab} 
@@ -67,37 +130,4 @@ export default function HomeUser() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA', padding: 20 },
-  header: { marginTop: 40, marginBottom: 30 },
-  greeting: { fontSize: 26, fontWeight: 'bold', color: '#1A1A1A' },
-  sub: { fontSize: 14, color: '#666' },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 15 },
-  petCard: { 
-    backgroundColor: '#FFF', 
-    padding: 15, 
-    borderRadius: 12, 
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    elevation: 2
-  },
-  petName: { fontSize: 18, fontWeight: 'bold' },
-  statusOk: { color: 'green', fontSize: 12, fontWeight: '600' },
-  statusWait: { color: 'orange', fontSize: 12, fontWeight: '600' },
-  editBtn: { padding: 8, borderWidth: 1, borderColor: '#2E7D32', borderRadius: 6 },
-  fab: { 
-    backgroundColor: '#2E7D32', 
-    padding: 18, 
-    borderRadius: 30, 
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
-    elevation: 5
-  },
-  fabText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' }
-});
+

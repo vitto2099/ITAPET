@@ -1,18 +1,22 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+// @ts-ignore
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getStorage } from "firebase/storage";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "itapet-xxxxx.firebaseapp.com",
-  projectId: "itapet-xxxxx",
-  storageBucket: "itapet-xxxxx.appspot.com",
-  messagingSenderId: "xxxxxxxx",
-  appId: "xxxxxxxx"
+  apiKey: "AIzaSyAojVylRmlIgqBPVrRHTIWiLeFcVrzDIvM",
+  authDomain: "itapet-354d4.firebaseapp.com",
+  projectId: "itapet-354d4",
+  storageBucket: "itapet-354d4.firebasestorage.app",
+  messagingSenderId: "493977798545",
+  appId: "1:493977798545:web:ec44b43ead4f33b7b4bc30"
 };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
+export const storage = getStorage(app);
