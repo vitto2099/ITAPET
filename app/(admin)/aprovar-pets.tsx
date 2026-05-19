@@ -86,6 +86,13 @@ export default function AprovarPets() {
 
               <View style={styles.actions}>
                 <TouchableOpacity 
+                  style={[styles.btn, { backgroundColor: '#f0f0f0', width: 80 }]}
+                  onPress={() => router.push({ pathname: '/(user)/detalhes-pet', params: { id: item.id } })}
+                >
+                  <Text style={{ fontSize: 12, color: '#333' }}>Detalhes</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
                   style={[styles.btn, styles.btnCheck]} 
                   onPress={() => handleDecisao(item.id, true)}
                 >

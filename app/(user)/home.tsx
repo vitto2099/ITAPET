@@ -46,12 +46,6 @@ export default function HomeUser() {
       setMeusPets(data);
     } catch (error) {
       console.error("Erro ao buscar meus pets:", error);
-      // Fallback visual para teste se não houver dados e for um erro de permissão/índice
-      if (meusPets.length === 0) {
-        setMeusPets([
-          { id: '1', nomeAnimal: 'Rex (Exemplo)', status: 'aprovado', raca: 'Cão' } as any,
-        ]);
-      }
     } finally {
       setLoading(false);
     }
@@ -105,12 +99,21 @@ export default function HomeUser() {
                   {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pendente'}
                 </Text>
               </View>
-              <TouchableOpacity 
-                style={styles.editBtn}
-                onPress={() => router.push({ pathname: '/(user)/detalhes-pet', params: { id: item.id } })}
-              >
-                <Text style={{ color: '#2E7D32' }}>Ver</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity 
+                  style={[styles.editBtn, { marginRight: 8, borderColor: '#1976D2' }]}
+                  onPress={() => router.push({ pathname: '/(user)/editar-meu-pet' as any, params: { id: item.id } })}
+                >
+                  <Text style={{ color: '#1976D2' }}>Editar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.editBtn}
+                  onPress={() => router.push({ pathname: '/(user)/detalhes-pet', params: { id: item.id } })}
+                >
+                  <Text style={{ color: '#2E7D32' }}>Ver</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
           ListEmptyComponent={

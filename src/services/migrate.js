@@ -3,7 +3,6 @@ const path = require('path');
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, addDoc, writeBatch, doc } = require('firebase/firestore');
 
-// ATENÇÃO: Substitua pelos seus dados reais do Firebase
 const firebaseConfig = {
   apiKey: "SUA_API_KEY",
   authDomain: "itapet-xxxxx.firebaseapp.com",
@@ -54,7 +53,6 @@ async function importCSV() {
     count++;
     batchCount++;
 
-    // Firestore batch limit is 500
     if (batchCount === 400) {
       await batch.commit();
       console.log(`Enviados ${count} registros...`);

@@ -1,3 +1,3 @@
 export const BAIRROS_ITAIOPOLIS = [
-  "Centro", "Lucena", "Vila Nova", "Interior", "Bom Jesus","Paraguaçu",
+  "Bom Jesus", "Centro", "Lucena", "Nova Brasília", "Paraguaçu", "Vila Dresseno", "Vila Nova", "Interior", "Sistema Antigo"
 ];

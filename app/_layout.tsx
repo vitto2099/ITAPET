@@ -15,10 +15,8 @@ function RootLayoutNav() {
     const atRoot = (segments as any).length === 0 || (segments[0] as any) === '(index)' || (segments[0] as any) === 'index';
 
     if (!user && !inAuthGroup) {
-      // Se não está logado e não está na pasta de auth, vai para o login
       router.replace('/(auth)/login');
     } else if (user && (inAuthGroup || atRoot)) {
-      // Se está logado e tenta acessar login ou raiz, redireciona pelo papel
       if (role === 'admin') {
         router.replace('/(admin)/dashboard');
       } else {

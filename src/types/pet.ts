@@ -11,5 +11,14 @@ export interface Registration {
   nomeTutor: string;
   valor: string;
   status?: 'pendente' | 'aprovado' | 'concluido';
-  bairro?: string; // Optional if we want to filter by neighborhood
+  bairro?: string;
+  fotoUrl?: string; // Mantido para compatibilidade
+  fotosPet?: string[]; // Array de até 4 fotos
+  carteiraUrl?: string;
+  userId?: string; // Para vincular ao usuário dono
+  vacinas?: {
+    nome: string;
+    data: string;
+    fotoUrl: string | null;
+  }[];
 }

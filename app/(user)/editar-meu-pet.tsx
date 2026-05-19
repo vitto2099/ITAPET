@@ -1,33 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../src/services/firebaseConfig';
 import { Registration } from '../../src/types/pet';
+import { useAuth } from '../../src/contexts/AuthContext';
 
-export default function EditarPet() {
+export default function EditarMeuPet() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState('');
   const [especie, setEspecie] = useState('');
-  const [bairro, setBairro] = useState('');
-  const [microchip, setMicrochip] = useState('');
+  const [raca, setRaca] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchPet = async () => {
-      if (!id) return;
+      if (!id || !user) return;
       try {
         const docRef = doc(db, "registrations", id.toString());
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data() as Registration;
+          
+          // Verifica se o usuário é o dono do pet
+          if (data.userId !== user.uid) {
+            Alert.alert("Acesso Negado", "Você não tem permissão para editar este animal.");
+            router.back();
+            return;
+          }
+
           setNome(data.nomeAnimal || '');
           setEspecie(data.especie || '');
-          setBairro(data.bairro || '');
-          setMicrochip(data.microchip || '');
+          setRaca(data.raca || '');
         }
       } catch (error) {
         console.error("Erro ao buscar pet para edição:", error);
@@ -36,7 +44,7 @@ export default function EditarPet() {
       }
     };
     fetchPet();
-  }, [id]);
+  }, [id, user]);
 
   const handleSalvar = async () => {
     if (!id) return;
@@ -45,8 +53,7 @@ export default function EditarPet() {
       await updateDoc(docRef, {
         nomeAnimal: nome,
         especie: especie,
-        bairro: bairro,
-        microchip: microchip
+        raca: raca,
       });
       Alert.alert("Sucesso", "Dados atualizados com sucesso!", [
         { text: "OK", onPress: () => router.back() }
@@ -55,6 +62,32 @@ export default function EditarPet() {
       console.error("Erro ao atualizar pet:", error);
       Alert.alert("Erro", "Não foi possível atualizar os dados.");
     }
+  };
+
+  const handleExcluir = () => {
+    Alert.alert(
+      "Remover Cadastro",
+      "Deseja realmente remover o cadastro deste animal? Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Remover", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (id) {
+                await deleteDoc(doc(db, "registrations", id.toString()));
+                Alert.alert("Removido", "O cadastro foi removido.");
+                router.replace('/(user)/home');
+              }
+            } catch (error) {
+              console.error("Erro ao excluir pet:", error);
+              Alert.alert("Erro", "Falha ao remover o cadastro.");
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#2E7D32" style={{marginTop: 50}} /></View>;
@@ -66,7 +99,7 @@ export default function EditarPet() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backText}>Cancelar</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Editar Cadastro</Text>
+        <Text style={styles.title}>Editar Meu Pet</Text>
         <TouchableOpacity onPress={handleSalvar}>
           <Text style={styles.saveText}>Salvar</Text>
         </TouchableOpacity>
@@ -83,7 +116,7 @@ export default function EditarPet() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Espécie / Raça</Text>
+          <Text style={styles.label}>Espécie</Text>
           <TextInput 
             style={styles.input} 
             value={especie} 
@@ -92,52 +125,19 @@ export default function EditarPet() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Bairro</Text>
+          <Text style={styles.label}>Raça</Text>
           <TextInput 
             style={styles.input} 
-            value={bairro} 
-            onChangeText={setBairro}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Número do Microchip</Text>
-          <TextInput 
-            style={styles.input} 
-            value={microchip} 
-            onChangeText={setMicrochip}
-            keyboardType="numeric"
+            value={raca} 
+            onChangeText={setRaca}
           />
         </View>
 
         <TouchableOpacity 
           style={styles.btnDanger}
-          onPress={() => {
-            Alert.alert(
-              "Excluir Pet",
-              "Tem certeza que deseja excluir permanentemente este registro?",
-              [
-                { text: "Cancelar", style: "cancel" },
-                { 
-                  text: "Excluir", 
-                  style: "destructive",
-                  onPress: async () => {
-                    try {
-                      if (id) {
-                        await deleteDoc(doc(db, "registrations", id.toString()));
-                        Alert.alert("Sucesso", "Registro excluído com sucesso!");
-                        router.back();
-                      }
-                    } catch (e) {
-                      Alert.alert("Erro", "Não foi possível excluir o registro.");
-                    }
-                  }
-                }
-              ]
-            );
-          }}
+          onPress={handleExcluir}
         >
-          <Text style={styles.btnDangerText}>Excluir Registro Permanente</Text>
+          <Text style={styles.btnDangerText}>🗑️ Remover Animal</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     borderWidth: 1, 
     borderColor: '#FFCDD2',
+    backgroundColor: '#FFEBEE',
     alignItems: 'center' 
   },
   btnDangerText: { color: '#D32F2F', fontWeight: 'bold' }

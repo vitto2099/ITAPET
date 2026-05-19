@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../src/services/firebaseConfig';
+import { uploadImage } from '../../src/services/uploadImage';
 
 export default function Perfil() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   // Estados para edição
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -27,6 +30,7 @@ export default function Perfil() {
           setUserData(data);
           setNome(data.nome || '');
           setTelefone(data.telefone || '');
+          setFotoPerfil(data.fotoPerfil || null);
         }
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
@@ -46,10 +50,19 @@ export default function Perfil() {
 
     setIsUpdating(true);
     try {
+      let fotoUrl = fotoPerfil;
+      // If fotoPerfil is a local URI (not already uploaded)
+      if (fotoPerfil && !fotoPerfil.startsWith('http')) {
+        const path = `users/${user?.uid}/perfil_${Date.now()}.jpg`;
+        fotoUrl = await uploadImage(fotoPerfil, path) || fotoPerfil;
+      }
+
       await updateDoc(doc(db, 'users', user?.uid || ''), {
         nome: nome,
-        telefone: telefone
+        telefone: telefone,
+        fotoPerfil: fotoUrl
       });
+      setFotoPerfil(fotoUrl);
       Alert.alert("Sucesso", "Alterações salvas com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
@@ -59,9 +72,54 @@ export default function Perfil() {
     }
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Excluir Conta",
+      "Tem certeza? Esta ação é permanente e você perderá acesso ao sistema.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Excluir Permanentemente", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert("Sucesso", "Sua conta foi excluída.");
+            } catch (error: any) {
+              console.error(error);
+              if (error.code === 'auth/requires-recent-login') {
+                Alert.alert("Erro", "Para sua segurança, você precisa sair e entrar novamente antes de excluir a conta.");
+              } else {
+                Alert.alert("Erro", "Não foi possível excluir a conta.");
+              }
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const getInitials = (name: string) => {
     if (!name) return "U";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  const selecionarFotoPerfil = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Erro", "Precisamos de permissão para acessar a galeria.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setFotoPerfil(result.assets[0].uri);
+    }
   };
 
   if (loading) {
@@ -83,9 +141,18 @@ export default function Perfil() {
       </View>
 
       <View style={styles.profileSection}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{getInitials(nome)}</Text>
-        </View>
+        <TouchableOpacity style={styles.avatarContainer} onPress={selecionarFotoPerfil}>
+          {fotoPerfil ? (
+            <Image source={{ uri: fotoPerfil }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{getInitials(nome)}</Text>
+            </View>
+          )}
+          <View style={styles.editBadge}>
+            <Text style={{color: 'white', fontSize: 12}}>✏️</Text>
+          </View>
+        </TouchableOpacity>
         <Text style={styles.userName}>{nome || 'Usuário'}</Text>
         <Text style={styles.userRole}>
           {userData?.role === 'admin' ? 'Veterinário(a) Autorizado(a)' : 'Cidadão de Itaiópolis'}
@@ -138,7 +205,11 @@ export default function Perfil() {
 
         <View style={styles.dangerZone}>
           <TouchableOpacity style={styles.outlineButton} onPress={() => logout()}>
-            <Text style={[styles.outlineButtonText, { color: '#D32F2F' }]}>Sair da Conta</Text>
+            <Text style={[styles.outlineButtonText, { color: '#666' }]}>Sair da Conta</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+            <Text style={styles.deleteButtonText}>Excluir Minha Conta Permanentemente</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -153,8 +224,11 @@ const styles = StyleSheet.create({
   backButtonText: { color: '#2E7D32', fontWeight: '600', fontSize: 16 },
   title: { fontSize: 28, fontWeight: '800', color: '#1A1A1A' },
   profileSection: { alignItems: 'center', paddingVertical: 30, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#EEE' },
-  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#E8F5E9', justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  avatarContainer: { position: 'relative', marginBottom: 15 },
+  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#E8F5E9', justifyContent: 'center', alignItems: 'center' },
+  avatarImage: { width: 100, height: 100, borderRadius: 50 },
   avatarText: { fontSize: 36, fontWeight: 'bold', color: '#2E7D32' },
+  editBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#2E7D32', width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF' },
   userName: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A' },
   userRole: { fontSize: 14, color: '#666', marginTop: 4 },
   form: { padding: 30 },

@@ -6,14 +6,16 @@ import { db } from '../../src/services/firebaseConfig';
 import { Registration } from '../../src/types/pet';
 import REGISTROS_HISTORICOS from '../../src/constants/registros_historicos.json';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { BAIRROS_ITAIOPOLIS } from '../../src/constants/bairros';
 
-const BAIRROS = ["Todos", "Centro", "Lucena", "Vila Nova", "Alto Paranaíba", "Santo Antônio", "Bom Jesus"];
+const BAIRROS = ["Todos", ...BAIRROS_ITAIOPOLIS];
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { logout } = useAuth();
   const [busca, setBusca] = useState('');
-  const [bairro, setBairro] = useState('Todos');  const [pets, setPets] = useState<Registration[]>([]);
+  const [bairro, setBairro] = useState('Todos');
+  const [pets, setPets] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 30;
@@ -21,38 +23,36 @@ export default function AdminDashboard() {
   const fetchPets = async (isMore = false) => {
     if (!isMore) setLoading(true);
     try {
-      // 1. Tenta buscar do Firestore
-      const q = query(
-        collection(db, "registrations"),
-        orderBy("criadoEm", "desc"),
-        limit(ITEMS_PER_PAGE)
-      );
+      let q;
+      if (bairro === 'Todos') {
+        q = query(collection(db, "registrations"), orderBy("criadoEm", "desc"), limit(ITEMS_PER_PAGE));
+      } else if (bairro === 'Sistema Antigo') {
+        // Apenas dados históricos
+        const start = isMore ? pets.length : 0;
+        const localData = REGISTROS_HISTORICOS.slice(start, start + ITEMS_PER_PAGE).map(item => ({ ...item, status: 'concluido' })) as any;
+        setPets(prev => isMore ? [...prev, ...localData] : localData);
+        setLoading(false);
+        return;
+      } else {
+        q = query(collection(db, "registrations"), where("bairro", "==", bairro), orderBy("criadoEm", "desc"), limit(ITEMS_PER_PAGE));
+      }
+
       const querySnapshot = await getDocs(q);
       const firestoreData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Registration[];
 
-      // 2. Se o Firestore estiver vazio, usa o histórico local com paginação
-      if (firestoreData.length === 0) {
-        const start = isMore ? pets.length : 0;
-        const localData = REGISTROS_HISTORICOS.slice(start, start + ITEMS_PER_PAGE).map(item => ({
-          ...item,
-          status: 'Concluido'
-        })) as any;
-        
-        setPets(prev => isMore ? [...prev, ...localData] : localData);
+      if (bairro === 'Todos' && firestoreData.length < ITEMS_PER_PAGE) {
+        // Se pegou poucos do firestore e está em "Todos", completa com históricos
+        const needed = ITEMS_PER_PAGE - firestoreData.length;
+        const localData = REGISTROS_HISTORICOS.slice(0, needed).map(item => ({ ...item, status: 'concluido' })) as any;
+        setPets([...firestoreData, ...localData]);
       } else {
         setPets(firestoreData);
       }
     } catch (error) {
       console.error("Erro ao buscar pets:", error);
-      const start = isMore ? pets.length : 0;
-      const localData = REGISTROS_HISTORICOS.slice(start, start + ITEMS_PER_PAGE).map(item => ({
-        ...item,
-        status: 'Concluido'
-      })) as any;
-      setPets(prev => isMore ? [...prev, ...localData] : localData);
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchPets();
-  }, []);
+  }, [bairro]);
 
   const handleLoadMore = () => {
     if (!loading && busca === '') {
@@ -88,21 +88,17 @@ export default function AdminDashboard() {
         ...doc.data()
       })) as Registration[];
 
+      // Busca complementar no histórico local
       const localResults = REGISTROS_HISTORICOS.filter(p => 
         p.microchip === termo || 
         p.nomeAnimal.toLowerCase().includes(termo.toLowerCase()) ||
         p.nomeTutor.toLowerCase().includes(termo.toLowerCase())
-      ).map(item => ({ ...item, status: 'Concluido' })) as any;
+      ).map(item => ({ ...item, status: 'concluido' })) as any;
 
-      const finalResults = [...results, ...localResults].slice(0, 100);
-      setPets(finalResults);
+      setPets([...results, ...localResults].slice(0, 50));
     } catch (error) {
       console.error("Erro na busca:", error);
-      const localResults = REGISTROS_HISTORICOS.filter(p => 
-        p.microchip === termo || 
-        p.nomeAnimal.toLowerCase().includes(termo.toLowerCase())
-      ).map(item => ({ ...item, status: 'Concluido' })) as any;
-      setPets(localResults.slice(0, 100));
+      setPets([]);
     } finally {
       setLoading(false);
     }
@@ -199,7 +195,7 @@ export default function AdminDashboard() {
                 
                 <TouchableOpacity 
                   style={styles.btnVacina}
-                  onPress={() => router.push({ pathname: '/(user)/cadastrar-pet-admin', params: { id: item.id } })}
+                  onPress={() => router.push({ pathname: '/(admin)/cadastrar-pet-admin' as any, params: { id: item.id } })}
                 >
                   <Text style={{color: '#fff'}}>💉 Vacina</Text>
                 </TouchableOpacity>

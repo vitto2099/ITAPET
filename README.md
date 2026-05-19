@@ -1,83 +1,80 @@
-# ITAPET - Sistema de Gestão Animal 🐾
+# ItaPet 🐾 - Gestão Animal Inteligente
 
-ItaPet é um aplicativo desenvolvido com **Expo** e **Firebase** para facilitar o cadastro e controle de animais em Itaiópolis - SC. O app permite que cidadãos cadastrem seus pets e que veterinários (administradores) aprovem esses cadastros e gerenciem vacinas.
-
----
-
-## 🚀 Como Rodar Localmente
-
-Para rodar o projeto em sua máquina, siga os passos abaixo:
-
-### 1. Pré-requisitos
-* **Node.js** instalado (versão 18 ou superior recomendada).
-* **npm** ou **yarn**.
-* **Expo Go** instalado no seu celular (para testar em dispositivo real).
-
-### 2. Instalação
-Clone o repositório e instale as dependências:
-```bash
-# Entre na pasta do projeto
-cd ITAPET
-
-# Instale as dependências
-npm install
-```
-
-### 3. Configuração do Firebase (CRUCIAL)
-O app depende do Firebase. Se você não configurou as chaves, o app pode falhar ao tentar autenticar ou salvar dados.
-1. Vá em `src/services/firebaseConfig.ts`.
-2. Substitua os placeholders (`SUA_API_KEY`, etc.) pelas suas credenciais do Firebase Console.
-
-### 4. Executando o App
-```bash
-npm start
-```
-* Pressione `w` para abrir no navegador (Web).
-* Use o QR Code no app **Expo Go** (Android/iOS) para abrir no celular.
-* **Nota:** O celular e o computador devem estar na **mesma rede Wi-Fi**.
+O **ItaPet** é uma plataforma moderna desenvolvida para a prefeitura de **Itaiópolis - SC**, focada na digitalização e desburocratização do cadastro e monitoramento da população animal do município. O sistema conecta cidadãos e veterinários municipais em um fluxo eficiente de registro, acompanhamento de vacinas e identificação rápida.
 
 ---
 
-## 🗺️ Guia de Navegação
+## 🌟 O Projeto
 
-O app utiliza **Expo Router** e está dividido em fluxos:
+O projeto nasceu da necessidade de um controle mais rigoroso sobre os animais domésticos da cidade, permitindo o rastreamento via microchip, gestão do histórico de vacinação e a identificação rápida dos tutores de animais encontrados na rua. Além disso, o app tem um forte aspecto de cidadania, dando aos moradores uma "Carteira Digital" para seus animais.
 
-### Fluxo de Autenticação (`/(auth)`)
-* **Login:** Tela inicial. 
-* **Cadastro:** Criação de novas contas para cidadãos.
-
-### Fluxo do Usuário Cidadão (`/(user)`)
-* **Home:** Lista de pets do usuário e status de aprovação.
-* **Cadastrar Pet:** Formulário para enviar dados de um novo animal.
-* **Perfil:** Configurações da conta.
-* **Ajuda:** Informações de suporte.
-
-### Fluxo Administrativo / Veterinário (`/(admin)`)
-* **Dashboard:** Busca de animais por microchip e filtros por bairro.
-* **Aprovar Pets:** Lista de cadastros pendentes para validação.
+### Principais Objetivos:
+*   **Controle Populacional:** Monitoramento estatístico de raças, espécies e localização por bairro.
+*   **Saúde Pública:** Gestão do histórico de vacinação (antirrábica, polivalente, etc.).
+*   **Segurança:** Rastreamento via Microchip e prevenção ao abandono.
+*   **Cidadania:** Plataforma digital com as fotos, dados e carteirinha do pet.
 
 ---
 
-## 🧪 Configurações de Teste
+## ✨ Funcionalidades
 
-Como o sistema ainda está em desenvolvimento, existem facilidades para teste:
+### 👨‍👩‍👧 Para o Cidadão (Tutor)
+*   **Cadastro Digital:** Registre seus pets com até 4 fotos do animal e foto da carteirinha.
+*   **Gerenciamento Total:** Edite as informações ou exclua registros de animais diretamente pelo celular.
+*   **Histórico em Tempo Real:** Acompanhe o status do cadastro (pendente, aprovado) e veja a linha do tempo de vacinas lançadas pela prefeitura.
+*   **Recuperação de Acesso:** Sistema de "Esqueci minha senha" integrado.
 
-### 1. Como entrar como Administrador
-O app possui uma lógica de simulação no login:
-* Para acessar o **Painel Admin**: Use qualquer e-mail que contenha a palavra `admin` (ex: `admin@itapet.com`).
-* Para acessar o **Painel Cidadão**: Use qualquer outro e-mail.
-
-### 2. Dados Mockados
-Algumas telas (como a Home e o Dashboard) exibem dados fictícios ("Rex", "Luna") para que você possa visualizar a interface mesmo sem conexão com o banco de dados.
-
----
-
-## 🛠️ Solução de Problemas (Troubleshooting)
-
-* **"Não consigo acessar nada após o login":** Verifique se o Firebase está configurado corretamente em `src/services/firebaseConfig.ts`.
-* **"O QR Code não carrega no celular":** Certifique-se de que o computador e o celular estão no mesmo Wi-Fi. Tente mudar o modo de conexão no terminal para `Tunnel` se o `LAN` falhar.
-* **"Erro de módulo não encontrado":** Rode `npm install` novamente para garantir que tudo foi baixado.
+### 🩺 Para o Administrador (Veterinário / Prefeitura)
+*   **Validação de Cadastros:** Analise as fotos e dados enviados pelos moradores para aprovar (✅) ou rejeitar (❌) registros no sistema.
+*   **Lançamento de Procedimentos:** Aplique vacinas e associe números de Microchip diretamente ao histórico do pet cadastrado.
+*   **Busca Rápida:** Identificação instantânea buscando por Microchip, CPF ou Nome.
+*   **Gestão de Dados Históricos:** O sistema diferencia registros novos dos registros antigos (migrados do papel), mantendo avisos caso o bairro do tutor não esteja especificado.
 
 ---
 
-*Desenvolvido para a comunidade de Itaiópolis - SC.*
+## 🛠️ Stack Tecnológica
+
+O ItaPet foi construído visando alta performance e facilidade de manutenção para os desenvolvedores:
+
+*   **Mobile / Frontend:** [React Native](https://reactnative.dev/) com framework [Expo](https://expo.dev/) (usando Expo Router para navegação em abas/pastas).
+*   **Linguagem:** [TypeScript](https://www.typescriptlang.org/) para segurança total de tipos.
+*   **Backend as a Service:** [Firebase](https://firebase.google.com/):
+    *   **Authentication:** Login por E-mail/Senha e controle de sessões.
+    *   **Firestore Database:** Banco de dados NoSQL em tempo real para armazenamento de pets, usuários e vacinas.
+    *   **Firebase Storage:** Armazenamento seguro de imagens (fotos de pets, vacinas, perfis).
+
+---
+
+## 🚀 Guia de Instalação e Execução
+
+### Pré-requisitos
+*   Node.js (versão LTS recomendada).
+*   App "Expo Go" instalado no seu dispositivo móvel (Android/iOS) ou Emulador.
+*   Conta no Firebase Console configurada.
+
+### Rodando o Projeto
+1. Clone este repositório no seu computador:
+   ```bash
+   git clone https://github.com/seu-usuario/ITAPET.git
+   cd ITAPET
+   ```
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+3. Configure o Firebase:
+   - Certifique-se de que o arquivo `src/services/firebaseConfig.ts` possui as chaves de acesso corretas do seu projeto no Firebase.
+4. Inicie o servidor do Expo:
+   ```bash
+   npx expo start
+   ```
+5. Escaneie o QR Code que aparecerá no terminal usando o app Expo Go (ou aperte `a` para rodar no emulador Android).
+
+---
+
+## 📖 Documentação Completa
+Para informações detalhadas sobre as coleções do banco de dados, estrutura de arquivos e regras de permissão, consulte o arquivo [DOCUMENTATION.md](./DOCUMENTATION.md) na raiz deste projeto.
+
+---
+
+*Desenvolvido com ❤️ para promover a saúde e a proteção animal na comunidade de Itaiópolis - SC.*

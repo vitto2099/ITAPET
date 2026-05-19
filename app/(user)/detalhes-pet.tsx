@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../src/services/firebaseConfig';
-import REGISTROS_HISTORICOS from '../../src/constants/registros_historicos.json';
 import { Registration } from '../../src/types/pet';
 import { styles } from '../../src/styles/detalhes-pet.styles';
 
@@ -27,10 +26,6 @@ export default function DetalhesPet() {
         }
       }
 
-      const localPet = REGISTROS_HISTORICOS.find(p => p.id === id);
-      if (localPet) {
-        setPet({ ...localPet, status: 'concluido' } as any);
-      }
     } catch (error) {
       console.error("Erro ao buscar detalhes:", error);
     } finally {
@@ -67,7 +62,7 @@ export default function DetalhesPet() {
           <View style={styles.migrationAlert}>
             <Text style={styles.migrationAlertTitle}>⚠️ Registro Migrado do Sistema Antigo</Text>
             <Text style={styles.migrationAlertText}>
-              Este cadastro não possui bairro ou CPF vinculado. O tutor deve procurar a Secretaria de Saúde para atualizar as informações.
+              Este cadastro não possui bairro vinculado. O tutor deve procurar a Secretaria de Saúde para atualizar as informações, se necessário.
             </Text>
           </View>
         )}
@@ -75,7 +70,11 @@ export default function DetalhesPet() {
         <View style={styles.cardInfo}>
           <View style={styles.petProfile}>
             <View style={styles.avatarPlaceholder}>
-              <Text style={{ fontSize: 30 }}>{getEmoji(pet.especie)}</Text>
+              {pet.fotoUrl ? (
+                <Image source={{ uri: pet.fotoUrl }} style={{ width: '100%', height: '100%', borderRadius: 30 }} />
+              ) : (
+                <Text style={{ fontSize: 30 }}>{getEmoji(pet.especie)}</Text>
+              )}
             </View>
             <View>
               <Text style={styles.petName}>{pet.nomeAnimal}</Text>
@@ -118,16 +117,61 @@ export default function DetalhesPet() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Histórico / Vacinas</Text>
-          <View style={styles.vaccineItem}>
-            <View style={styles.timeline}>
-              <View style={[styles.dot, styles.dotActive]} />
-            </View>
-            <View style={styles.vaccineContent}>
-              <Text style={styles.vaccineName}>Procedimento Inicial</Text>
-              <Text style={styles.vaccineDate}>{pet.dataProc || 'Data não disponível'} • Concluído</Text>
-            </View>
+          <Text style={styles.sectionTitle}>Documentação e Fotos</Text>
+          <View style={{ marginTop: 10 }}>
+            {pet.fotosPet && pet.fotosPet.length > 0 ? (
+              <View style={{ marginBottom: 15 }}>
+                <Text style={styles.detailLabel}>Fotos do Pet</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 5 }}>
+                  {pet.fotosPet.map((uri, index) => (
+                    <Image key={index} source={{ uri }} style={{ width: 150, height: 150, borderRadius: 10, marginRight: 10 }} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : pet.fotoUrl ? (
+              <View style={{ marginBottom: 15 }}>
+                <Text style={styles.detailLabel}>Foto do Pet</Text>
+                <Image source={{ uri: pet.fotoUrl }} style={{ width: 150, height: 150, borderRadius: 10, marginTop: 5 }} />
+              </View>
+            ) : null}
+            
+            {pet.carteiraUrl && (
+              <View>
+                <Text style={styles.detailLabel}>Carteirinha</Text>
+                <Image source={{ uri: pet.carteiraUrl }} style={{ width: 200, height: 150, borderRadius: 10, marginTop: 5, resizeMode: 'cover' }} />
+              </View>
+            )}
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Histórico / Vacinas</Text>
+          {pet.vacinas && pet.vacinas.length > 0 ? (
+            pet.vacinas.map((vacina, idx) => (
+              <View key={idx} style={styles.vaccineItem}>
+                <View style={styles.timeline}>
+                  <View style={[styles.dot, styles.dotActive]} />
+                </View>
+                <View style={styles.vaccineContent}>
+                  <Text style={styles.vaccineName}>{vacina.nome}</Text>
+                  <Text style={styles.vaccineDate}>{vacina.data} • Concluído</Text>
+                  {vacina.fotoUrl && (
+                    <Image source={{ uri: vacina.fotoUrl }} style={{ width: 60, height: 60, borderRadius: 8, marginTop: 5 }} />
+                  )}
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.vaccineItem}>
+              <View style={styles.timeline}>
+                <View style={[styles.dot, { backgroundColor: '#ccc' }]} />
+              </View>
+              <View style={styles.vaccineContent}>
+                <Text style={styles.vaccineName}>Nenhuma vacina registrada</Text>
+                <Text style={styles.vaccineDate}>Aguardando lançamento oficial</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity 

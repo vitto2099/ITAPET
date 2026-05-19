@@ -9,24 +9,43 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
+import { useAuth } from "../../src/contexts/AuthContext";
+
 export default function EsqueciSenha() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { resetPassword } = useAuth();
 
-  const handleRecuperar = () => {
+  const handleRecuperar = async () => {
     if (!email) {
       Alert.alert("Erro", "Por favor, digite seu e-mail.");
       return;
     }
-    Alert.alert(
-      "E-mail Enviado",
-      "Se este e-mail estiver cadastrado, você receberá um link de recuperação em breve.",
-      [{ text: "OK", onPress: () => router.back() }]
-    );
+
+    setLoading(true);
+    try {
+      await resetPassword(email);
+      Alert.alert(
+        "E-mail Enviado",
+        "Se este e-mail estiver cadastrado, você receberá um link de recuperação em breve.",
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+    } catch (error: any) {
+      console.error(error);
+      let message = "Não foi possível enviar o e-mail de recuperação.";
+      if (error.code === 'auth/user-not-found') {
+        message = "E-mail não cadastrado.";
+      }
+      Alert.alert("Erro", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,8 +72,16 @@ export default function EsqueciSenha() {
             keyboardType="email-address"
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleRecuperar}>
-            <Text style={styles.buttonText}>Enviar Link de Recuperação</Text>
+          <TouchableOpacity 
+            style={[styles.button, loading && { opacity: 0.7 }]} 
+            onPress={handleRecuperar}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Enviar Link de Recuperação</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity 

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../src/services/firebaseConfig';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { BAIRROS_ITAIOPOLIS } from '../../src/constants/bairros';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { db } from '../../src/services/firebaseConfig';
 import { uploadImage } from '../../src/services/uploadImage';
 import { styles } from '../../src/styles/cadastrar-pet.styles';
 
@@ -18,10 +18,27 @@ export default function CadastrarPet() {
   const [sexo, setSexo] = useState<'Macho' | 'Fêmea'>('Macho');
   const [raca, setRaca] = useState('');
   const [bairro, setBairro] = useState(BAIRROS_ITAIOPOLIS[0]);
+  const [fotosPet, setFotosPet] = useState<string[]>([]);
   const [fotoCarteira, setFotoCarteira] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const tirarFotoCarteira = async () => {
+  const selecionarImagem = async (tipo: 'pet' | 'carteira') => {
+    if (tipo === 'pet' && fotosPet.length >= 4) {
+      Alert.alert("Aviso", "Você já adicionou o limite de 4 fotos para o pet.");
+      return;
+    }
+    Alert.alert(
+      "Selecionar Imagem",
+      "Escolha de onde deseja pegar a foto",
+      [
+        { text: "Câmera", onPress: () => abrirCamera(tipo) },
+        { text: "Galeria", onPress: () => abrirGaleria(tipo) },
+        { text: "Cancelar", style: "cancel" }
+      ]
+    );
+  };
+
+  const abrirCamera = async (tipo: 'pet' | 'carteira') => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert("Erro", "Precisamos de permissão para acessar a câmera.");
@@ -30,11 +47,36 @@ export default function CadastrarPet() {
 
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      quality: 0.8,
+      quality: 0.7,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setFotoCarteira(result.assets[0].uri);
+      if (tipo === 'pet') {
+        setFotosPet(prev => [...prev, result.assets[0].uri]);
+      } else {
+        setFotoCarteira(result.assets[0].uri);
+      }
+    }
+  };
+
+  const abrirGaleria = async (tipo: 'pet' | 'carteira') => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Erro", "Precisamos de permissão para acessar a galeria.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      if (tipo === 'pet') {
+        setFotosPet(prev => [...prev, result.assets[0].uri]);
+      } else {
+        setFotoCarteira(result.assets[0].uri);
+      }
     }
   };
 
@@ -51,10 +93,20 @@ export default function CadastrarPet() {
 
     setLoading(true);
     try {
-      let fotoUrl = null;
+      let fotosUrls: string[] = [];
+      let carteiraUrl = null;
+
+      if (fotosPet.length > 0) {
+        for (let i = 0; i < fotosPet.length; i++) {
+          const path = `registrations/${user.uid}/pet_${Date.now()}_${i}.jpg`;
+          const url = await uploadImage(fotosPet[i], path);
+          if (url) fotosUrls.push(url);
+        }
+      }
+
       if (fotoCarteira) {
-        const path = `registrations/${user.uid}/${Date.now()}.jpg`;
-        fotoUrl = await uploadImage(fotoCarteira, path);
+        const path = `registrations/${user.uid}/carteira_${Date.now()}.jpg`;
+        carteiraUrl = await uploadImage(fotoCarteira, path);
       }
 
       await addDoc(collection(db, "registrations"), {
@@ -66,7 +118,9 @@ export default function CadastrarPet() {
         status: 'pendente',
         userId: user.uid,
         nomeTutor: userData?.nome || 'Cidadão',
-        fotoUrl: fotoUrl,
+        fotoUrl: fotosUrls.length > 0 ? fotosUrls[0] : null,
+        fotosPet: fotosUrls,
+        carteiraUrl: carteiraUrl,
         criadoEm: serverTimestamp(),
       });
 
@@ -81,8 +135,8 @@ export default function CadastrarPet() {
   };
 
   const SelectionChip = ({ label, selected, onSelect }: { label: string, selected: boolean, onSelect: () => void }) => (
-    <TouchableOpacity 
-      style={[styles.chip, selected && styles.chipSelected]} 
+    <TouchableOpacity
+      style={[styles.chip, selected && styles.chipSelected]}
       onPress={onSelect}
     >
       <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
@@ -94,9 +148,9 @@ export default function CadastrarPet() {
       <Text style={styles.title}>Cadastro do Animal</Text>
 
       <Text style={styles.label}>Nome do Bicho</Text>
-      <TextInput 
-        style={styles.input} 
-        placeholder="Ex: Rex" 
+      <TextInput
+        style={styles.input}
+        placeholder="Ex: Rex"
         value={nome}
         onChangeText={setNome}
       />
@@ -108,9 +162,9 @@ export default function CadastrarPet() {
         <SelectionChip label="🐾 Outro" selected={especie === 'Outro'} onSelect={() => setEspecie('Outro')} />
       </View>
       {especie === 'Outro' && (
-        <TextInput 
-          style={styles.input} 
-          placeholder="Qual espécie?" 
+        <TextInput
+          style={styles.input}
+          placeholder="Qual espécie?"
           value={outroEspecie}
           onChangeText={setOutroEspecie}
         />
@@ -123,43 +177,66 @@ export default function CadastrarPet() {
       </View>
 
       <Text style={styles.label}>Raça</Text>
-      <TextInput 
-        style={styles.input} 
-        placeholder="Ex: SRD ou Labrador" 
+      <TextInput
+        style={styles.input}
+        placeholder="Ex: SRD ou Labrador"
         value={raca}
         onChangeText={setRaca}
       />
 
       <Text style={styles.label}>Seu Bairro (Itaiópolis)</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipGroup}>
-        {BAIRROS_ITAIOPOLIS.map(b => (
-          <SelectionChip 
-            key={b} 
-            label={b} 
-            selected={bairro === b} 
-            onSelect={() => setBairro(b)} 
+        {BAIRROS_ITAIOPOLIS.filter(b => b !== 'Sistema Antigo').map(b => (
+          <SelectionChip
+            key={b}
+            label={b}
+            selected={bairro === b}
+            onSelect={() => setBairro(b)}
           />
         ))}
       </ScrollView>
 
-      <Text style={styles.label}>Carteira de Vacinação (Foto)</Text>
-      <TouchableOpacity style={styles.btnCamera} onPress={tirarFotoCarteira}>
+      <Text style={styles.label}>Fotos do Animal (Até 4 fotos)</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        {fotosPet.map((uri, index) => (
+          <View key={index} style={{ position: 'relative' }}>
+            <Image source={{ uri }} style={{ width: 80, height: 80, borderRadius: 10 }} />
+            <TouchableOpacity
+              style={{ position: 'absolute', top: -5, right: -5, backgroundColor: 'red', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}
+              onPress={() => setFotosPet(prev => prev.filter((_, i) => i !== index))}
+            >
+              <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>X</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+        {fotosPet.length < 4 && (
+          <TouchableOpacity
+            style={[styles.btnCamera, { width: 80, height: 80, marginTop: 0, marginBottom: 0, alignSelf: 'flex-start' }]}
+            onPress={() => selecionarImagem('pet')}
+          >
+            <Text style={{ color: '#2E7D32', textAlign: 'center', fontSize: 24 }}>+</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <Text style={styles.label}>Carteira de Vacinação (Opcional)</Text>
+      <TouchableOpacity style={styles.btnCamera} onPress={() => selecionarImagem('carteira')}>
         {fotoCarteira ? (
           <Image source={{ uri: fotoCarteira }} style={styles.preview} />
         ) : (
-          <Text style={{color: '#2E7D32'}}>📸 Tirar foto da Carteirinha</Text>
+          <Text style={{ color: '#2E7D32' }}>📂 Anexar Carteirinha</Text>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.btnFinalizar} 
+      <TouchableOpacity
+        style={styles.btnFinalizar}
         onPress={handleSalvar}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={{color: '#fff', fontWeight: 'bold'}}>Finalizar Cadastro do Pet</Text>
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Finalizar Cadastro do Pet</Text>
         )}
       </TouchableOpacity>
       <View style={{ height: 40 }} />
@@ -167,4 +244,4 @@ export default function CadastrarPet() {
   );
 }
 
-
+
