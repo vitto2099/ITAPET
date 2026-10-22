@@ -10,7 +10,7 @@ import { uploadImage } from '../../src/services/uploadImage';
 
 export default function Perfil() {
   const router = useRouter();
-  const { user, logout, deleteAccount } = useAuth();
+  const { user, userData: authUserData, logout, deleteAccount } = useAuth();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
@@ -31,9 +31,20 @@ export default function Perfil() {
           setNome(data.nome || '');
           setTelefone(data.telefone || '');
           setFotoPerfil(data.fotoPerfil || null);
+        } else if (authUserData) {
+          setUserData(authUserData);
+          setNome(authUserData.nome || '');
+          setTelefone(authUserData.telefone || '');
+          setFotoPerfil(authUserData.fotoPerfil || null);
         }
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
+        if (authUserData) {
+          setUserData(authUserData);
+          setNome(authUserData.nome || '');
+          setTelefone(authUserData.telefone || '');
+          setFotoPerfil(authUserData.fotoPerfil || null);
+        }
       } finally {
         setLoading(false);
       }

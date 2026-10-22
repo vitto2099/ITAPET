@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Cores Oficiais ItaPet / Prefeitura de Itaiópolis (Extraídas da Logo Oficial) */
+  --color-municipio-blue: #0B4F8A;
+  --color-municipio-blue-hover: #083D6C;
+  --color-municipio-blue-soft: #EBF3FA;
+
+  --color-floresta: #15803D;
+  --color-floresta-light: #16A34A;
+  --color-floresta-dark: #166534;
+  --color-floresta-soft: #F0FDF4;
+
+  --color-ouro: #D97706;
+  --color-ouro-hover: #B45309;
+  --color-ouro-soft: #FEF3C7;
+
+  --color-ceu: #0284C7;
+  --color-ceu-light: #38BDF8;
+  --color-ceu-soft: #F0F9FF;
+
+  --color-fundo-canvas: #F8FAFC;
+  --color-fundo-card: #FFFFFF;
+}
+
+@layer base {
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+}
+
+/* Animações Sutis e Harmoniosas */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 4s ease-in-out 2s infinite;
+}
+
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* Botões Modernos e Ergonômicos (Toque Suave, Sem Bordas Agressivas) */
+.btn-3d-green, .btn-primary-green {
+  background-color: #15803D;
+  color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+}
+.btn-3d-green:hover, .btn-primary-green:hover {
+  background-color: #166534;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(21, 128, 61, 0.2);
+}
+.btn-3d-green:active, .btn-primary-green:active {
+  transform: translateY(0);
+}
+
+.btn-3d-yellow, .btn-primary-amber {
+  background-color: #D97706;
+  color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+}
+.btn-3d-yellow:hover, .btn-primary-amber:hover {
+  background-color: #B45309;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.25);
+}
+.btn-3d-yellow:active, .btn-primary-amber:active {
+  transform: translateY(0);
+}
+
+.btn-3d-blue, .btn-primary-blue {
+  background-color: #0B4F8A;
+  color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+}
+.btn-3d-blue:hover, .btn-primary-blue:hover {
+  background-color: #083D6C;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(11, 79, 138, 0.25);
+}
+.btn-3d-blue:active, .btn-primary-blue:active {
+  transform: translateY(0);
+}
+
+/* Moldura e Guilloche Suave para a Carteira de Identificação Animal */
+.guilloche-pattern {
+  background-image: radial-gradient(#15803D 0.6px, transparent 0.6px), radial-gradient(#0B4F8A 0.6px, #FFFFFF 0.6px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  opacity: 0.08;
+}
+
+/* Scrollbar amigável e limpa */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F3EEE7;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8CEBE;
+  border-radius: 9999px;
+  border: 2px solid #F3EEE7;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0D6838;
+}
+
+/* Regras de Impressão de Alta Qualidade para a Carteira de Identificação */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .fixed {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .carteira-print-container {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: 3px solid #0D6838 !important;
+    page-break-inside: avoid !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
+    border-radius: 16px !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

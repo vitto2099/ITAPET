@@ -21,7 +21,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginAsTest } = useAuth();
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -111,6 +111,30 @@ export default function Login() {
           >
             <Text style={styles.registerButtonText}>Criar Conta Cidadão</Text>
           </TouchableOpacity>
+
+          <View style={styles.testSection}>
+            <View style={styles.testHeaderRow}>
+              <View style={styles.testDivider} />
+              <Text style={styles.testBadgeText}>⚡ MODO DE TESTE</Text>
+              <View style={styles.testDivider} />
+            </View>
+
+            <TouchableOpacity 
+              style={styles.testCitizenButton} 
+              onPress={() => loginAsTest('citizen')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.testCitizenButtonText}>👤 Entrar como Teste Cidadão</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.testVetButton} 
+              onPress={() => loginAsTest('admin')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.testVetButtonText}>🩺 Entrar como TesteVet</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -219,6 +243,56 @@ const styles = StyleSheet.create({
     color: "#2E7D32",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  testSection: {
+    marginTop: 30,
+    paddingTop: 10,
+  },
+  testHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  testDivider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E2E8F0",
+  },
+  testBadgeText: {
+    marginHorizontal: 12,
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  testCitizenButton: {
+    backgroundColor: "#E8F5E9",
+    borderWidth: 1.5,
+    borderColor: "#A5D6A7",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  testCitizenButtonText: {
+    color: "#1B5E20",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  testVetButton: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  testVetButtonText: {
+    color: "#1E40AF",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });
 

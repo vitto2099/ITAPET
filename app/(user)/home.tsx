@@ -9,7 +9,7 @@ import { styles } from '../../src/styles/home.styles';
 
 export default function HomeUser() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
   const [meusPets, setMeusPets] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('Cidadão');
@@ -17,14 +17,20 @@ export default function HomeUser() {
   useEffect(() => {
     const fetchUserName = async () => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUserName(userDoc.data().nome || 'Cidadão');
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserName(userDoc.data().nome || 'Cidadão');
+          } else if (userData?.nome) {
+            setUserName(userData.nome);
+          }
+        } catch {
+          if (userData?.nome) setUserName(userData.nome);
         }
       }
     };
     fetchUserName();
-  }, [user]);
+  }, [user, userData]);
 
   const fetchMeusPets = async () => {
     if (!user) return;

@@ -1,0 +1,10 @@
+{
+  "dataExecucao": "2026-10-20T17:55:17.947Z",
+  "totalProcessados": 822,
+  "avisos": [
+    "Linha 340 (ID 10): Corrigida espécie de 'Felin' para 'Felino'",
+    "Linha 347 (ID 17): Microchip duplicado detectado: 900263005565158 (Animal: Alice, Tutor: Joaninha)",
+    "Linha 355 (ID 25): Microchip duplicado detectado: 900263005565158 (Animal: Cut, Tutor: Beatriz)",
+    "Linha 400 (ID 15): Animal 'Lili' tinha sexo 'Felino'. Corrigido para 'Fêmea'."
+  ]
+}
